@@ -1,0 +1,21 @@
+{
+    "plugin": "4.1",
+    "standings": "3.7",
+    "relative": "4.1",
+    "trackmap": "4.1",
+    "delta": "4.1",
+    "inputs": "4.1",
+    "dash": "4.1",
+    "setupcover": "4.1",
+    "twitchchat": "4.1",
+    "launchassist": "4.1",
+    "spotter": "4.1",
+    "fuelcalc": "4.1",
+    "fuelcalclive": "4.1",
+    "wind": "4.1",
+    "weather": "4.1",
+    "multiclassstandings": "4.1",
+    "precipitation": "4.1",
+    "trackwetness": "4.1",
+    "highlighteddriver": "4.1"
+}
