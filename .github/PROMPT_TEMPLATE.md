@@ -200,7 +200,7 @@ Format the response with:
 
 ## Additional Resources
 
-- [iRacing API Documentation](https://forums.iracing.com/categories/iracing-sdk)
+- [iRacing SDK Community Forum](https://forums.iracing.com/categories/iracing-sdk) - Community discussions and SDK resources
 - [GitHub Copilot Usage Tips](https://docs.github.com/en/copilot)
 - [Perplexity AI Prompt Guide](https://docs.perplexity.ai/guides/prompt-guide)
 
