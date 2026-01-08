@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>iRacing Overlay - Simple Example</title>
+  <style>
+    :root {
+      --color-bg: rgba(0, 0, 0, 0.8);
+      --color-text: #ffffff;
+      --color-primary: #1e90ff;
+      --color-success: #00ff00;
+      --color-warning: #ffa500;
+      --color-danger: #ff4444;
+      --spacing: 16px;
+      --border-radius: 8px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: transparent;
+      color: var(--color-text);
+      padding: var(--spacing);
+    }
+
+    .overlay-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: var(--spacing);
+      max-width: 1200px;
+    }
+
+    .overlay-panel {
+      background: var(--color-bg);
+      border: 2px solid var(--color-primary);
+      border-radius: var(--border-radius);
+      padding: var(--spacing);
+      backdrop-filter: blur(10px);
+    }
+
+    .panel-header {
+      font-size: 18px;
+      font-weight: bold;
+      color: var(--color-primary);
+      margin-bottom: var(--spacing);
+      border-bottom: 1px solid var(--color-primary);
+      padding-bottom: 8px;
+    }
+
+    .data-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .data-row:last-child {
+      border-bottom: none;
+    }
+
+    .data-label {
+      opacity: 0.8;
+      font-size: 14px;
+    }
+
+    .data-value {
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    .position-display {
+      text-align: center;
+    }
+
+    .position-number {
+      font-size: 72px;
+      font-weight: bold;
+      color: var(--color-primary);
+      text-shadow: 0 0 10px var(--color-primary);
+    }
+
+    .position-label {
+      font-size: 18px;
+      opacity: 0.8;
+      margin-top: -10px;
+    }
+
+    .position-change {
+      margin-top: 10px;
+      font-size: 24px;
+    }
+
+    .position-change.positive {
+      color: var(--color-success);
+    }
+
+    .position-change.negative {
+      color: var(--color-danger);
+    }
+
+    .timing-value {
+      font-family: 'Courier New', monospace;
+      font-size: 24px;
+      color: var(--color-primary);
+    }
+
+    .delta-positive {
+      color: var(--color-danger);
+    }
+
+    .delta-negative {
+      color: var(--color-success);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .stat-item {
+      text-align: center;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 4px;
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: bold;
+      color: var(--color-primary);
+    }
+
+    .stat-label {
+      font-size: 12px;
+      opacity: 0.7;
+      margin-top: 4px;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 20px;
+      opacity: 0.5;
+    }
+
+    .error {
+      color: var(--color-danger);
+      padding: 10px;
+      border: 1px solid var(--color-danger);
+      border-radius: 4px;
+      background: rgba(255, 68, 68, 0.1);
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .updating {
+      animation: pulse 0.5s ease-in-out;
+    }
+
+    .status-indicator {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 8px;
+    }
+
+    .status-connected {
+      background: var(--color-success);
+      box-shadow: 0 0 10px var(--color-success);
+    }
+
+    .status-disconnected {
+      background: var(--color-danger);
+      box-shadow: 0 0 10px var(--color-danger);
+    }
+
+    #connection-status {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: var(--color-bg);
+      padding: 8px 16px;
+      border-radius: 20px;
+      border: 1px solid var(--color-primary);
+      display: flex;
+      align-items: center;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div id="connection-status">
+    <span class="status-indicator status-disconnected"></span>
+    <span id="status-text">Disconnected</span>
+  </div>
+
+  <div class="overlay-container">
+    <!-- Position Panel -->
+    <div class="overlay-panel">
+      <div class="panel-header">POSITION</div>
+      <div class="position-display">
+        <div class="position-number" id="position">--</div>
+        <div class="position-label">Overall Position</div>
+        <div class="data-row" style="margin-top: 20px;">
+          <span class="data-label">Class Position</span>
+          <span class="data-value" id="class-position">--</span>
+        </div>
+        <div class="position-change" id="position-change"></div>
+      </div>
+    </div>
+
+    <!-- Timing Panel -->
+    <div class="overlay-panel">
+      <div class="panel-header">TIMING</div>
+      <div class="data-row">
+        <span class="data-label">Last Lap</span>
+        <span class="timing-value" id="last-lap">--:--.---</span>
+      </div>
+      <div class="data-row">
+        <span class="data-label">Best Lap</span>
+        <span class="timing-value" id="best-lap">--:--.---</span>
+      </div>
+      <div class="data-row">
+        <span class="data-label">Delta</span>
+        <span class="timing-value" id="delta">--.---</span>
+      </div>
+      <div class="data-row">
+        <span class="data-label">Session Best</span>
+        <span class="timing-value" id="session-best">--:--.---</span>
+      </div>
+    </div>
+
+    <!-- Statistics Panel -->
+    <div class="overlay-panel">
+      <div class="panel-header">STATISTICS</div>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-value" id="incidents">--</div>
+          <div class="stat-label">Incidents</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="laps">--</div>
+          <div class="stat-label">Laps</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="irating-change">--</div>
+          <div class="stat-label">iRating Δ</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="sr-change">--</div>
+          <div class="stat-label">SR Δ</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Driver Info Panel -->
+    <div class="overlay-panel">
+      <div class="panel-header">DRIVER INFO</div>
+      <div class="data-row">
+        <span class="data-label">Name</span>
+        <span class="data-value" id="driver-name">--</span>
+      </div>
+      <div class="data-row">
+        <span class="data-label">iRating</span>
+        <span class="data-value" id="irating">----</span>
+      </div>
+      <div class="data-row">
+        <span class="data-label">Safety Rating</span>
+        <span class="data-value" id="safety-rating">-.-</span>
+      </div>
+      <div class="data-row">
+        <span class="data-label">License</span>
+        <span class="data-value" id="license">--</span>
+      </div>
+    </div>
+
+    <!-- Session Info Panel -->
+    <div class="overlay-panel">
+      <div class="panel-header">SESSION INFO</div>
+      <div class="data-row">
+        <span class="data-label">Series</span>
+        <span class="data-value" id="series-name" style="font-size: 14px;">--</span>
+      </div>
+      <div class="data-row">
+        <span class="data-label">Track</span>
+        <span class="data-value" id="track-name" style="font-size: 14px;">--</span>
+      </div>
+      <div class="data-row">
+        <span class="data-label">Car</span>
+        <span class="data-value" id="car-name" style="font-size: 14px;">--</span>
+      </div>
+      <div class="data-row">
+        <span class="data-label">SOF</span>
+        <span class="data-value" id="strength-of-field">----</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /**
+     * Simple Overlay Controller
+     * This is a demonstration showing how to structure the UI updates.
+     * In a real implementation, you would fetch data from the iRacing API.
+     */
+    class OverlayController {
+      constructor() {
+        this.updateInterval = null;
+        this.isConnected = false;
+      }
+
+      /**
+       * Initialize the overlay
+       */
+      async init() {
+        console.log('Initializing overlay...');
+        
+        // In a real implementation, you would:
+        // 1. Initialize authentication
+        // 2. Connect to iRacing API
+        // 3. Start data synchronization
+        
+        // For demo purposes, simulate connection
+        await this.simulateConnection();
+        
+        // Start update loop
+        this.start();
+      }
+
+      /**
+       * Simulate API connection (for demo)
+       */
+      async simulateConnection() {
+        return new Promise(resolve => {
+          setTimeout(() => {
+            this.isConnected = true;
+            this.updateConnectionStatus(true);
+            console.log('Connected to iRacing API');
+            resolve();
+          }, 1000);
+        });
+      }
+
+      /**
+       * Start the update loop
+       */
+      start() {
+        if (this.updateInterval) return;
+        
+        // Update immediately
+        this.update();
+        
+        // Then update every second
+        this.updateInterval = setInterval(() => this.update(), 1000);
+      }
+
+      /**
+       * Stop the update loop
+       */
+      stop() {
+        if (this.updateInterval) {
+          clearInterval(this.updateInterval);
+          this.updateInterval = null;
+        }
+      }
+
+      /**
+       * Update overlay with new data
+       */
+      async update() {
+        if (!this.isConnected) return;
+
+        try {
+          // In a real implementation, fetch data from iRacing API
+          const data = this.getMockData();
+          
+          // Update UI elements
+          this.updatePosition(data);
+          this.updateTiming(data);
+          this.updateStatistics(data);
+          this.updateDriverInfo(data);
+          this.updateSessionInfo(data);
+          
+        } catch (error) {
+          console.error('Update error:', error);
+          this.updateConnectionStatus(false);
+        }
+      }
+
+      /**
+       * Update position display
+       */
+      updatePosition(data) {
+        this.updateElement('position', data.position);
+        this.updateElement('class-position', data.classPosition);
+        
+        const change = data.startPosition - data.position;
+        const changeEl = document.getElementById('position-change');
+        
+        if (change > 0) {
+          changeEl.textContent = `↑ ${change}`;
+          changeEl.className = 'position-change positive';
+        } else if (change < 0) {
+          changeEl.textContent = `↓ ${Math.abs(change)}`;
+          changeEl.className = 'position-change negative';
+        } else {
+          changeEl.textContent = '';
+          changeEl.className = 'position-change';
+        }
+      }
+
+      /**
+       * Update timing display
+       */
+      updateTiming(data) {
+        this.updateElement('last-lap', this.formatLapTime(data.lastLap));
+        this.updateElement('best-lap', this.formatLapTime(data.bestLap));
+        this.updateElement('session-best', this.formatLapTime(data.sessionBest));
+        
+        const delta = data.lastLap - data.bestLap;
+        const deltaEl = document.getElementById('delta');
+        const formatted = delta >= 0 ? `+${(delta/1000).toFixed(3)}` : (delta/1000).toFixed(3);
+        deltaEl.textContent = formatted;
+        deltaEl.className = delta >= 0 ? 'timing-value delta-positive' : 'timing-value delta-negative';
+      }
+
+      /**
+       * Update statistics display
+       */
+      updateStatistics(data) {
+        this.updateElement('incidents', data.incidents + 'x');
+        this.updateElement('laps', data.laps);
+        
+        const irChange = data.iratingChange;
+        const irEl = document.getElementById('irating-change');
+        irEl.textContent = irChange >= 0 ? `+${irChange}` : irChange;
+        irEl.style.color = irChange >= 0 ? 'var(--color-success)' : 'var(--color-danger)';
+        
+        this.updateElement('sr-change', data.srChange.toFixed(2));
+      }
+
+      /**
+       * Update driver info display
+       */
+      updateDriverInfo(data) {
+        this.updateElement('driver-name', data.driverName);
+        this.updateElement('irating', data.irating);
+        this.updateElement('safety-rating', data.safetyRating.toFixed(2));
+        this.updateElement('license', data.license);
+      }
+
+      /**
+       * Update session info display
+       */
+      updateSessionInfo(data) {
+        this.updateElement('series-name', data.seriesName);
+        this.updateElement('track-name', data.trackName);
+        this.updateElement('car-name', data.carName);
+        this.updateElement('strength-of-field', data.sof);
+      }
+
+      /**
+       * Update connection status indicator
+       */
+      updateConnectionStatus(connected) {
+        this.isConnected = connected;
+        const statusEl = document.getElementById('connection-status');
+        const statusText = document.getElementById('status-text');
+        const indicator = statusEl.querySelector('.status-indicator');
+        
+        if (connected) {
+          indicator.className = 'status-indicator status-connected';
+          statusText.textContent = 'Connected';
+        } else {
+          indicator.className = 'status-indicator status-disconnected';
+          statusText.textContent = 'Disconnected';
+        }
+      }
+
+      /**
+       * Helper to update element text content
+       */
+      updateElement(id, value) {
+        const element = document.getElementById(id);
+        if (element) {
+          const oldValue = element.textContent;
+          element.textContent = value;
+          
+          // Add update animation if value changed
+          if (oldValue !== value) {
+            element.classList.add('updating');
+            setTimeout(() => element.classList.remove('updating'), 500);
+          }
+        }
+      }
+
+      /**
+       * Format lap time from milliseconds
+       */
+      formatLapTime(ms) {
+        if (!ms) return '--:--.---';
+        const totalSeconds = ms / 1000;
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = (totalSeconds % 60).toFixed(3).padStart(6, '0');
+        return `${minutes}:${seconds}`;
+      }
+
+      /**
+       * Get mock data for demonstration
+       * In real implementation, this would fetch from iRacing API
+       */
+      getMockData() {
+        return {
+          // Position data
+          position: 5,
+          classPosition: 3,
+          startPosition: 8,
+          
+          // Timing data
+          lastLap: 125432,    // milliseconds
+          bestLap: 123456,
+          sessionBest: 122000,
+          
+          // Statistics
+          incidents: 4,
+          laps: 15,
+          iratingChange: 23,
+          srChange: 0.08,
+          
+          // Driver info
+          driverName: 'John Doe',
+          irating: 1850,
+          safetyRating: 3.45,
+          license: 'B 3.45',
+          
+          // Session info
+          seriesName: 'Advanced Mazda MX-5 Cup',
+          trackName: 'Watkins Glen International',
+          carName: 'Mazda MX-5 Cup',
+          sof: 2340
+        };
+      }
+    }
+
+    // Initialize overlay when page loads
+    const overlay = new OverlayController();
+    window.addEventListener('DOMContentLoaded', () => {
+      overlay.init();
+    });
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', () => {
+      overlay.stop();
+    });
+  </script>
+</body>
+</html>
