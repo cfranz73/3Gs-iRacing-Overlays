@@ -1,0 +1,34 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"github.copilot.enable": {
+			"*": true,
+			"plaintext": true,
+			"markdown": true,
+			"javascript": true,
+			"typescript": true,
+			"json": true
+		},
+		"files.associations": {
+			"*.md": "markdown",
+			"copilot-instructions.md": "markdown"
+		},
+		"emmet.includeLanguages": {
+			"javascript": "javascriptreact"
+		},
+		"git.confirmSync": false,
+		"terminal.integrated.env.linux": {
+			"NODE_ENV": "development"
+		},
+		"terminal.integrated.env.osx": {
+			"NODE_ENV": "development"
+		},
+		"terminal.integrated.env.windows": {
+			"NODE_ENV": "development"
+		}
+	}
+}
